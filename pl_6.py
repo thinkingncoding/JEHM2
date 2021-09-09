@@ -1,3 +1,4 @@
+#공유
 import pygame
 import sys
 import math
