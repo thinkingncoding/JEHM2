@@ -2,6 +2,7 @@
 import pygame
 import sys
 import math
+import random
 from pygame.locals import *
 
 img_galaxy = pygame.image.load("image/galaxy.png")
@@ -13,6 +14,11 @@ img_sship = [
 ]
 img_weapon = pygame.image.load("image/bullet.png")
 
+img_enemy = [
+    pygame.image.load("image/enemy0.png"),
+    pygame.image.load("image/enemy1.png")
+]
+
 tmr = 0
 bg_y = 0
 
@@ -22,6 +28,7 @@ ss_d = 0
 
 key_spc = 0
 key_z = 0
+
 MISSILE_MAX = 200
 msl_no = 0 # 탄환발사에 사용할 리스트 인덱스 변수
 
@@ -29,6 +36,22 @@ msl_f = [False] * MISSILE_MAX
 msl_x = [0] * MISSILE_MAX
 msl_y = [0] * MISSILE_MAX
 msl_a = [0] * MISSILE_MAX
+
+
+ENEMY_MAX = 100
+emy_no = 0
+emy_f = [False] * ENEMY_MAX
+emy_x = [0] * ENEMY_MAX
+emy_y = [0] * ENEMY_MAX
+emy_a = [0] * ENEMY_MAX
+emy_type = [0] * ENEMY_MAX
+emy_speed = [0] * ENEMY_MAX
+
+LINE_T = -80
+LINE_B = 800
+LINE_L = -80
+LINE_R = 1040
+
 
 def move_starship(scrn, key): #플레이어 기체 이동
     global ss_x, ss_y, ss_d, key_spc, key_z
@@ -94,6 +117,46 @@ def move_missile(scrn): #탄환이동
             if msl_y[i] < 0 or msl_x[i] < 0 or msl_x[i] > 960:
                 msl_f[i] = False
 
+
+
+def bring_enemy(): # 적 기체 등장
+
+    if tmr  % 30 == 0:
+        set_enemy(random.randint(20,940), LINE_T, 90, 1, 6)
+
+def set_enemy(x, y, a, ty, sp): # 적 기체 설정
+    global emy_no
+    while True:
+        if emy_f[emy_no] == False :
+            emy_f[emy_no] = True
+            emy_x[emy_no] = x
+            emy_y[emy_no] = y
+            emy_a[emy_no] = a
+            emy_type[emy_no] = ty
+            emy_speed[emy_no] = sp
+            break
+        emy_no = (emy_no+1) % ENEMY_MAX
+
+def move_enemy(scrn): #적 기체 이동
+    for i in range(ENEMY_MAX):
+        if emy_f[i] == True :
+            ang = -90 - emy_a[i]
+            png =  emy_type[i]
+            emy_x[i] = emy_x[i] + emy_speed[i] * math.cos(math.radians(emy_a[i]))
+            emy_y[i] = emy_y[i] + emy_speed[i] * math.sin(math.radians(emy_a[i]))
+            if emy_type[i] == 1 and emy_y[i] > 360:
+                set_enemy(emy_x[i], emy_y[i], 90, 0, 8)
+                emy_a[i] = -45
+                emy_speed[i] = 16
+
+            if emy_x[i] < LINE_L or LINE_R < emy_x[i] or emy_y[i] < LINE_T or LINE_B < emy_y[i] :
+                emy_f[i] = False
+
+            img_rz = pygame.transform.rotozoom(img_enemy[png], ang, 1.0)
+            scrn.blit(img_rz, [emy_x[i] - img_rz.get_width() / 2, emy_y[i] - img_rz.get_height() /2] )
+
+
+
 def main():
     global bg_y, tmr
     pygame.init()
@@ -122,6 +185,8 @@ def main():
         key = pygame.key.get_pressed()
         move_starship(screen, key)
         move_missile(screen)
+        bring_enemy()
+        move_enemy(screen)
 
         pygame.display.update()
         clock.tick(30)
