@@ -19,6 +19,16 @@ img_enemy = [
     pygame.image.load("image/enemy1.png")
 ]
 
+img_explode = [
+    None,
+    pygame.image.load("image/explosion1.png"),
+    pygame.image.load("image/explosion2.png"),
+    pygame.image.load("image/explosion3.png"),
+    pygame.image.load("image/explosion4.png"),
+    pygame.image.load("image/explosion5.png")
+]
+
+
 tmr = 0
 bg_y = 0
 
@@ -47,10 +57,20 @@ emy_a = [0] * ENEMY_MAX
 emy_type = [0] * ENEMY_MAX
 emy_speed = [0] * ENEMY_MAX
 
+EMY_BULLET = 0 # 적 탄환 번호 관리 상수
 LINE_T = -80
 LINE_B = 800
 LINE_L = -80
 LINE_R = 1040
+
+EFFECT_MAX = 100
+eff_no = 0 #폭팔 시 사용할 리스트 인덱스
+eff_p = [0] * EFFECT_MAX    # 폭발시 사용할 이미지 번호 리스트
+eff_x = [0] * EFFECT_MAX
+eff_y = [0] * EFFECT_MAX
+
+def get_dis(x1, y1, x2, y2): # 두점 사이의 거리 계산
+    return  ((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
 
 
 def move_starship(scrn, key): #플레이어 기체 이동
@@ -152,10 +172,35 @@ def move_enemy(scrn): #적 기체 이동
             if emy_x[i] < LINE_L or LINE_R < emy_x[i] or emy_y[i] < LINE_T or LINE_B < emy_y[i] :
                 emy_f[i] = False
 
+            if emy_type[i] != EMY_BULLET: # 플레이어 기체 발사 탄환과 히트체크
+                w = img_enemy[emy_type[i]].get_width()
+                h = img_enemy[emy_type[i]].get_height()
+                r = int((w+h) /4) + 12
+                for n in range(MISSILE_MAX):
+                    if msl_f[n] == True and get_dis(emy_x[i],emy_y[i],msl_x[n], msl_y[n]) < r*r:
+                        msl_f[n] = False
+                        set_effect(emy_x[i],emy_y[i])
+                        emy_f[i] = False
+
             img_rz = pygame.transform.rotozoom(img_enemy[png], ang, 1.0)
             scrn.blit(img_rz, [emy_x[i] - img_rz.get_width() / 2, emy_y[i] - img_rz.get_height() /2] )
 
 
+
+def set_effect(x,y) :   # 폭팔 설정
+    global  eff_no
+    eff_p[eff_no] = 1
+    eff_x[eff_no] = x
+    eff_y[eff_no] = y
+    eff_no = (eff_no + 1) % EFFECT_MAX
+
+def draw_effect(scrn): # 폭팔 연출
+    for i in range(EFFECT_MAX):
+        if eff_p[i] > 0:
+            scrn.blit(img_explode[eff_p[i]], [eff_x[i]-48, eff_y[i] - 48] )
+            eff_p[i] += 1
+            if eff_p[i] == 6:
+                eff_p[i] = 0
 
 def main():
     global bg_y, tmr
@@ -187,6 +232,7 @@ def main():
         move_missile(screen)
         bring_enemy()
         move_enemy(screen)
+        draw_effect(screen)
 
         pygame.display.update()
         clock.tick(30)
