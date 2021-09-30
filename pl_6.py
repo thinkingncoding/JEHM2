@@ -13,6 +13,7 @@ img_sship = [
     pygame.image.load("image/starship_burner.png")
 ]
 img_weapon = pygame.image.load("image/bullet.png")
+img_shield = pygame.image.load("image/shield.png")
 
 img_enemy = [
     pygame.image.load("image/enemy0.png"),
@@ -35,6 +36,8 @@ bg_y = 0
 ss_x = 480
 ss_y = 360
 ss_d = 0
+ss_shield = 100  # 플레이어 기체의 실드량 변수
+ss_muteki = 0 # 무적상태 변수
 
 key_spc = 0
 key_z = 0
@@ -74,7 +77,7 @@ def get_dis(x1, y1, x2, y2): # 두점 사이의 거리 계산
 
 
 def move_starship(scrn, key): #플레이어 기체 이동
-    global ss_x, ss_y, ss_d, key_spc, key_z
+    global ss_x, ss_y, ss_d, key_spc, key_z, ss_shield, ss_muteki
     ss_d = 0
 
     if key[K_UP] == 1:
@@ -104,11 +107,31 @@ def move_starship(scrn, key): #플레이어 기체 이동
         set_missile(0)
 
     key_z = (key_z +1) * key[K_z]
-    if key_z == 1 :
+    if key_z == 1 and ss_shield > 10 :
         set_missile(10)
+        ss_shield -= 10
+    if ss_muteki % 2 == 0:
+        scrn.blit(img_sship[3],[ss_x-8, ss_y+40+(tmr % 3)*2])
+        scrn.blit(img_sship[ss_d], [ss_x - 37, ss_y - 48])
 
-    scrn.blit(img_sship[3],[ss_x-8, ss_y+40+(tmr % 3)*2])
-    scrn.blit(img_sship[ss_d], [ss_x -37, ss_y-48])
+    if ss_muteki > 0 :
+        ss_muteki -= 1
+        return
+    for i in range(ENEMY_MAX):
+        if emy_f[i] == True:
+            w = img_enemy[emy_type[i]].get_width()
+            h = img_enemy[emy_type[i]].get_height()
+            r = ((w+h)/4 +(74 + 96) /4)
+            if get_dis(emy_x[i], emy_y[i], ss_x, ss_y) < r * r:
+                set_effect(ss_x, ss_y)
+                ss_shield = ss_shield - 10
+                if ss_shield <= 0:
+                    ss_shield = 0
+                if ss_muteki == 0 :
+                    ss_muteki = 60
+                emy_f[i] = False
+
+
 def set_missile(typ) : # 플레이어 기체 발사 탄환 설정
     global msl_no
     if typ == 0 :  # 단발
@@ -158,6 +181,7 @@ def set_enemy(x, y, a, ty, sp): # 적 기체 설정
         emy_no = (emy_no+1) % ENEMY_MAX
 
 def move_enemy(scrn): #적 기체 이동
+    global  ss_shield
     for i in range(ENEMY_MAX):
         if emy_f[i] == True :
             ang = -90 - emy_a[i]
@@ -181,6 +205,10 @@ def move_enemy(scrn): #적 기체 이동
                         msl_f[n] = False
                         set_effect(emy_x[i],emy_y[i])
                         emy_f[i] = False
+                        if ss_shield < 100:
+                            ss_shield += 1
+
+
 
             img_rz = pygame.transform.rotozoom(img_enemy[png], ang, 1.0)
             scrn.blit(img_rz, [emy_x[i] - img_rz.get_width() / 2, emy_y[i] - img_rz.get_height() /2] )
@@ -233,7 +261,8 @@ def main():
         bring_enemy()
         move_enemy(screen)
         draw_effect(screen)
-
+        screen.blit(img_shield,[40,680])
+        pygame.draw.rect(screen,(64,32,32),[40+ss_shield *4, 680, (100 - ss_shield)*4, 12])
         pygame.display.update()
         clock.tick(30)
 
