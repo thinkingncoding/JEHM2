@@ -40,6 +40,15 @@ img_title = [
     pygame.image.load("image/logo.png")
 ]
 
+#SE 로딩 변수
+se_barrage = None
+se_damage  = None
+se_explosion = None
+se_shot = None
+
+
+
+
 idx = 0
 score = 0
 tmr = 0
@@ -125,11 +134,14 @@ def move_starship(scrn, key): #플레이어 기체 이동
     key_spc = (key_spc + 1) * key[K_SPACE]
     if key_spc % 5 == 1:
         set_missile(0)
+        #SE다루는 명령 : 재생 : 변수명.play()  파일로딩 : 변수명 = pygame.mixer.Sound(파일명)
+        se_shot.play() #발사음 출력
 
     key_z = (key_z +1) * key[K_z]
     if key_z == 1 and ss_shield > 10 :
         set_missile(10)
         ss_shield -= 10
+        se_barrage.play() #탄막 발사음 출력
     if ss_muteki % 2 == 0:
         scrn.blit(img_sship[3],[ss_x-8, ss_y+40+(tmr % 3)*2])
         scrn.blit(img_sship[ss_d], [ss_x - 37, ss_y - 48])
@@ -152,6 +164,7 @@ def move_starship(scrn, key): #플레이어 기체 이동
                         tmr = 0
                     if ss_muteki == 0 :
                         ss_muteki = 60
+                        se_damage.play() # 데미지 효과음 출력
                     emy_f[i] = False
 
 
@@ -256,11 +269,17 @@ def draw_effect(scrn): # 폭팔 연출
 
 def main():  # 메인 루프
     global idx, tmr, score, bg_y, ss_x, ss_y, ss_d, ss_shield, ss_muteki
+    global se_barrage, se_damage, se_explosion, se_shot
 
     pygame.init()
     pygame.display.set_caption("Galaxy Lancer")
     screen = pygame.display.set_mode((960, 720))
     clock = pygame.time.Clock()
+
+    se_barrage = pygame.mixer.Sound("sound_gl/barrage.ogg")
+    se_damage = pygame.mixer.Sound("sound_gl/damage.ogg")
+    se_explosion = pygame.mixer.Sound("sound_gl/explosion.ogg")
+    se_shot = pygame.mixer.Sound("sound_gl/shot.ogg")
 
     while True:
         tmr = tmr + 1
@@ -299,6 +318,8 @@ def main():  # 메인 루프
                     emy_f[i] = False
                 for i in range(MISSILE_MAX):
                     msl_f[i] = False
+                pygame.mixer.music.load("sound_gl/bgm.ogg")
+                pygame.mixer.music.play(-1)
 
         if idx == 1:  # 게임 플레이 중
             move_starship(screen, key)
@@ -312,18 +333,42 @@ def main():  # 메인 루프
         if idx == 2:  # 게임 오버
             move_missile(screen)
             move_enemy(screen)
-            draw_text(screen, "GAME OVER", 480, 300, 80, RED)
-            if tmr == 150:
+            if tmr == 1:
+                pygame.mixer.music.stop() #BGM 정지
+            if tmr <= 90:
+                if tmr % 5 == 0 :
+                    set_effect(ss_x + random.randint(-60, 60), ss_y + random.randint(-60, 60))
+                if tmr % 10 == 0 :
+                    se_damage.play()
+            if tmr == 120:
+                pygame.mixer.music.load("sound_gl/gameover.ogg")
+                pygame.mixer.music.play(0)
+
+            if tmr > 120:
+                draw_text(screen, "GAME OVER", 480, 300, 80, RED)
+
+            if tmr == 400:
                 idx = 0
                 tmr = 0
+
 
         if idx == 3:  # 게임 클리어
             move_starship(screen, key)
             move_missile(screen)
-            draw_text(screen, "GAME CLEAR", 480, 300, 80, SILVER)
-            if tmr == 150:
+
+            if tmr == 1:
+                pygame.mixer.music.stop() #BGM 정지
+            if tmr == 2:
+                pygame.mixer.music.load("sound_gl/gameclear.ogg")
+                pygame.mixer.music.play(0)
+
+            if tmr > 20:
+                draw_text(screen, "GAME CLEAR", 480, 300, 80, SILVER)
+
+            if tmr == 300:
                 idx = 0
                 tmr = 0
+
 
         draw_effect(screen)  # 폭발 연출
         draw_text(screen, "SCORE " + str(score), 200, 30, 50, SILVER)
