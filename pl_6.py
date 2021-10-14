@@ -23,7 +23,10 @@ img_shield = pygame.image.load("image/shield.png")
 
 img_enemy = [
     pygame.image.load("image/enemy0.png"),
-    pygame.image.load("image/enemy1.png")
+    pygame.image.load("image/enemy1.png"),
+    pygame.image.load("image/enemy2.png"),
+    pygame.image.load("image/enemy3.png"),
+    pygame.image.load("image/enemy4.png")
 ]
 
 img_explode = [
